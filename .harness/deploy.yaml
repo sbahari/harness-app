@@ -1,0 +1,33 @@
+kind: pipeline
+type: docker
+name: build-push-harbor
+
+spec:
+  stages:
+    - type: ci
+      spec:
+        platform:
+          os: linux
+          arch: amd64
+        steps:
+          - name: go-test
+            type: run
+            spec:
+              container: golang:1.22-alpine
+              script: |-
+                go mod download
+                go test ./...
+
+          - name: build-push
+            type: plugin
+            spec:
+              name: docker
+              inputs:
+                registry: harbor.mbizmarket.my.id:14567
+                repo: harbor.mbizmarket.my.id:14567/mbiz-inrell/harnes-app
+                dockerfile: Dockerfile
+                username: ${{ secrets.get("HARBOR_USERNAME") }}
+                password: ${{ secrets.get("HARBOR_PASSWORD") }}
+                tags:
+                  - ${{ build.number }}
+                  - latest
